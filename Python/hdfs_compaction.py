@@ -33,9 +33,9 @@ def get_table_location(table_name):
     Get location where table stored. Used for scanning number of files and its storage size
     """
     table_location = (spark
-    .sql(f"describe formatted {table_name}")
-    .filter("col_name='Location' and data_type like 'hdfs://%'")
-    .select("data_type").collect()[0][0])
+        .sql(f"describe formatted {table_name}")
+        .filter("col_name='Location' and data_type like 'hdfs://%'")
+        .select("data_type").collect()[0][0])
     return table_location
 
 
@@ -66,6 +66,7 @@ if __name__ == "__main__":
 
     print(f'{current_date()} INFO: Started to backup {name_table}')
 
+    # backup table to avoid unpleasant incidents
     df_for_bkp = spark.sql(f"select * from {name_table}")
     (
         df_for_bkp
@@ -91,6 +92,8 @@ if __name__ == "__main__":
             sc.setCheckpointDir(f"{table_directory}_checkpoint")
 
             part_df = spark.sql(f"select * from {name_table}").checkpoint() # we need use checkpoint because we can't read table and write table at the same time
+
+            # this is how we compact small files in HDFS. Just use repartition and see magic :
             (
                 part_df
                 .repartition(get_repartition_factor(directory_size))
@@ -101,6 +104,8 @@ if __name__ == "__main__":
             print(f'{current_date()} INFO: MARKED AS SUCCESS. Repartition of {name_table} finished. Parquet has been recorded at {table_directory}')
 
             print(f'{current_date()} INFO: Deleting {table_directory}_checkpoint.')
+
+            # delete checkpoint directory because we don't need it anymore
             delete_checkpoint_path(f"{table_directory}_checkpoint")
             print(f'{current_date()} INFO: {table_directory}_checkpoint deleted. Application marked as SUCCESS.')
         else:
