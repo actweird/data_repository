@@ -4,8 +4,8 @@ how to run hdfs_compaction.py with spark-submit:
 
 spark3-submit --master yarn \
 --deploy-mode cluster \
---conf spark.pyspark.virtualenv.enabled=true \
---conf spark.pyspark.virtualenv.type=native \
+--driver-memory 1g \
+--executor-memory 1g \
 hdfs_compaction.py \
 --table_name schema.table \
 --dir_size ....... # size in bytes
