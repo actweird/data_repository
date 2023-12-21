@@ -20,14 +20,6 @@ def delete_checkpoint_path(path):
     subprocess.call(["hadoop", "fs", "-rm", "-r", path])
 
 
-def get_repartition_factor(dir_size):
-    """
-    Divide folder size by block size and get optimal number for repartition
-    """
-    block_size = sc._jsc.hadoopConfiguration().get("dfs.blocksize")
-    return math.ceil(int(dir_size) / int(block_size))
-
-
 def get_table_location(table_name):
     """
     Get location where table stored. Used for scanning number of files and its storage size
@@ -56,13 +48,25 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Spark application to to compact data on Hive")
     parser.add_argument("--table_name", type=str, required=True, help="Table name to compact")
-    parser.add_argument("--dir_size", type=str, required=True, help="Table directory size")
 
     args = parser.parse_args()
     name_table = args.table_name
-    directory_size = args.dir_size
 
     table_directory = get_table_location(name_table)
+    fs_uri = "your url, like hdfs://smthhere"
+
+    def get_repartition_factor():
+        """
+        Divide folder size by block size and get optimal number for repartition
+        """
+        block_size = sc._jsc.hadoopConfiguration().get("dfs.blocksize")
+        URI = spark.sparkContext._gateway.jvm.java.net.URI
+        Path = spark.sparkContext._gateway.jvm.org.apache.hadoop.fs.Path
+        FileSystem = spark.sparkContext._gateway.jvm.org.apache.hadoop.fs.FileSystem
+        Configuration = spark.sparkContext._gateway.jvm.org.apache.hadoop.conf.Configuration
+        fs = FileSystem.get(URI(fs_uri), Configuration())
+        dir_size = fs.getContentSummary(Path(table_directory)).getLength()
+        return math.ceil(int(dir_size) / int(block_size))
 
     print(f'{current_date()} INFO: Started to backup {name_table}')
 
@@ -96,7 +100,7 @@ if __name__ == "__main__":
             # this is how we compact small files in HDFS. Just use repartition and see magic :
             (
                 part_df
-                .repartition(get_repartition_factor(directory_size))
+                .repartition(get_repartition_factor())
                 .write
                 .insertInto(name_table, overwrite=True)
             )

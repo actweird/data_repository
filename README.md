@@ -7,9 +7,8 @@ spark3-submit --master yarn \
 --driver-memory 1g \
 --executor-memory 1g \
 hdfs_compaction.py \
---table_name schema.table \
---dir_size ....... # size in bytes
+--table_name schema.table
 
-You need 2 parameters - first is table name (table_name, you write it like schema.table), because that's how program gets the path to the table; second is directory size (dir_size, you write it in bytes) because with it you will get optimal number for repartition.
+You need set table name in parameters (table_name, you write it like schema.table), because that's how program gets the path to the table.
 
 **If you want to test solution with small files, you can generate small files in HDFS with files_creator.py program from this repository.**
